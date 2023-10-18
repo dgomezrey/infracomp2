@@ -1,119 +1,66 @@
-//Daniel Gomez Rey - 202122586 
-
-import java.io.*;
-import java.util.*;
+package src;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MatrixMultiplication {
-
-    private int rowsA;
-    private int colsA;
-    private int colsB;
+    private int nf1;
+    private int nc1;
+    private int nc2;
     private int pageSize;
-    private List<String> pageReferences;
+    private int[][] mat1, mat2, mat3;
 
-    public MatrixMultiplication(int rowsA, int colsA, int colsB, int pageSize) {
-        this.rowsA = rowsA;
-        this.colsA = colsA;
-        this.colsB = colsB;
+    public MatrixMultiplication(int nf1, int nc1, int nc2, int pageSize) {
+        this.mat1 = new int[nf1][nc1];
+        this.mat2 = new int[nc1][nc2];
+        this.mat3 = new int[nf1][nc2];
+        this.nf1 = nf1;
+        this.nc1 = nc1;
+        this.nc2 = nc2;
         this.pageSize = pageSize;
-        this.pageReferences = new ArrayList<>();
     }
 
-    public void generatePageReferences() {
-        for (int i = 0; i < rowsA; i++) {
-            for (int j = 0; j < colsB; j++) {
-                for (int k = 0; k < colsA; k++) {
-                    // Acceder a elemtno A[i][k]
-                    pageReferences.add("A " + getPageNumber(i, k));
-                    // Acceder a elemtno B[k][j]
-                    pageReferences.add("B " + getPageNumber(k, j));
+
+    public List<Reference> generatePageReferences() {
+        List<Reference> references = new ArrayList<>();
+    
+        for (int i = 0; i < this.nf1; i++) {
+            for (int j = 0; j < this.nc2; j++) {
+                for (int k = 0; k < this.nc1; k++) {
+                    references.add(new Reference("A", i, k, getPageReference("A", i, k, this.nc1), getOffset("A", i, k, this.nc1)));
+                    references.add(new Reference("B", k, j, getPageReference("B", k, j, this.nc2), getOffset("B", k, j, this.nc2)));
                 }
+                references.add(new Reference("C", i, j, getPageReference("C", i, j, this.nc2), getOffset("C", i, j, this.nc2)));
             }
         }
+        return references;
     }
+    
 
-    public void saveReferencesToFile(String filename) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(filename));
-        writer.write("TP: " + pageSize + "  ");
-        writer.write("NF: " + rowsA + "  ");
-        writer.write("NC1: " + colsA + "  ");
-        writer.write("NC2: " + colsB + "  ");
-        writer.write("NR: " + pageReferences.size() + "  ");
-        writer.write("NP: " + getTotalPages() + "\n");
-
-        for (String ref : pageReferences) {
-            writer.write(ref + "\n");
+    private int getPageReference(String matrixLabel, int i, int j, int M) {
+        int linearIndex;
+        if (matrixLabel.equals("A")) {
+            linearIndex = i * M + j;
+        } else if (matrixLabel.equals("B")) {
+            linearIndex = nf1 * nc1 + i * M + j;  
+        } else {  
+            linearIndex = nf1 * nc1 + nc1 * nc2 + i * M + j;  
         }
-
-        writer.close();
+        int address = linearIndex * 4; //4 bytes por entero
+        return address / pageSize; 
     }
-
-    private int getPageNumber(int row, int col) {
-        int position = (row * colsA + col) * 4; // 4 bytes por cada integer
-        return position / pageSize;
-    }
-
-    private int getTotalPages() {
-        int totalElements = 3 * rowsA * colsA; // Para las matrices A, B, y C
-        int totalBytes = totalElements * 4; // 4 bytes por cada integer
-        int totalPages = totalBytes / pageSize;
-        if (totalBytes % pageSize != 0) {
-            totalPages++; // Anadir pagina adicional si no es multiplo del tamaño de pagina
+    
+    private int getOffset(String matrixLabel, int i, int j, int M) {
+        int linearIndex;
+        if (matrixLabel.equals("A")) {
+            linearIndex = i * M + j;
+        } else if (matrixLabel.equals("B")) {
+            linearIndex = nf1 * nc1 + i * M + j;  
+        } else {  
+            linearIndex = nf1 * nc1 + nc1 * nc2 + i * M + j;  
         }
-        return totalPages;
+        int address = linearIndex * 4;  
+        return address % pageSize;  
     }
+    
 
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-
-        while (true) {
-            System.out.println("---- Menú ----");
-            System.out.println("1. Generación de las referencias");
-            System.out.println("2. Calcular el número de fallas de página");
-            System.out.println("q. Salir");
-            System.out.print("Seleccione una opción: ");
-            String choice = scanner.next();
-
-            switch (choice) {
-                case "1":
-                    System.out.println("Ingrese el tamaño de página:");
-                    int pageSize = scanner.nextInt();
-
-                    System.out.println("Ingrese el número de filas de la matriz A:");
-                    int rowsA = scanner.nextInt();
-
-                    System.out.println("Ingrese el número de columnas de la matriz A (y filas de la matriz B):");
-                    int colsA = scanner.nextInt();
-
-                    System.out.println("Ingrese el número de columnas de la matriz B:");
-                    int colsB = scanner.nextInt();
-
-                    MatrixMultiplication matrixMul = new MatrixMultiplication(rowsA, colsA, colsB, pageSize);
-                    matrixMul.generatePageReferences();
-
-                    System.out.println("Ingrese el nombre del archivo para guardar las referencias:");
-                    String filename = scanner.next();
-
-                    try {
-                        matrixMul.saveReferencesToFile(filename);
-                        System.out.println("Referencias guardadas exitosamente en: " + filename);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    break;
-
-                case "2":
-                    // TODO: Implementar la lógica para calcular el número de fallas de página
-                    System.out.println("Esta opción aún no está implementada.");
-                    break;
-
-                case "q":
-                    System.out.println("Saliendo...");
-                    return;
-
-                default:
-                    System.out.println("Opción no reconocida. Intente de nuevo.");
-            }
-        }
-    }
 }
