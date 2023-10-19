@@ -23,7 +23,7 @@ public class PagingSystem {
     public boolean accessPage(int pageNumber) {
         Page page = pageTable.get(pageNumber);
         if (page.inMemory) {
-            page.referenceByte |= 0b10000000;
+            page.referenceByte |= 0b11110000;
             return true;
         } else {
             return false;
@@ -43,7 +43,7 @@ public class PagingSystem {
             Page page = pageTable.get(pageNumber);
             page.inMemory = true;
             page.frame = freeFrame;
-            page.referenceByte |= 0b10000000;
+            page.referenceByte |= 0b11110000;
         } else {
             int pageToReplace = choosePageToReplace();
             replacePage(pageToReplace, pageNumber);
@@ -71,7 +71,7 @@ public class PagingSystem {
         Page newPage = pageTable.get(newPageNumber);
         newPage.inMemory = true;
         newPage.frame = frame;
-        newPage.referenceByte |= 0b10000000;
+        newPage.referenceByte |= 0b11110000;
     
         frames[frame] = newPageNumber;
     }
@@ -82,6 +82,7 @@ public class PagingSystem {
             }
         }
     }
+
     public int simulate() {
         final int[] pageFaults = {0};  
 
